@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Depurar Shell (launch)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Shell",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Habilitar la impresión de valores en gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "Compilar Shell"
+    },
+    {
+      "name": "Depurar Shell (attach)",
+      "type": "cppdbg",
+      "request": "attach",
+      "program": "${workspaceFolder}/Shell",
+      "processId": "${command:pickProcess}",
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Habilitar la impresión de valores en gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
