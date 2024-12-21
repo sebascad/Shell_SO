@@ -17,6 +17,16 @@
           "description": "Habilitar la impresión de valores en gdb",
           "text": "-enable-pretty-printing",
           "ignoreFailures": true
+        },
+        {
+          "description": "Configurar GDB para manejar SIGINT",
+          "text": "handle SIGINT nostop noprint pass",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Configurar GDB para manejar SIGTSTP",
+          "text": "handle SIGTSTP nostop noprint pass",
+          "ignoreFailures": true
         }
       ],
       "preLaunchTask": "Compilar Shell"
@@ -31,6 +41,35 @@
       "setupCommands": [
         {
           "description": "Habilitar la impresión de valores en gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Configurar GDB para manejar SIGINT",
+          "text": "handle SIGINT nostop noprint pass",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Configurar GDB para manejar SIGTSTP",
+          "text": "handle SIGTSTP nostop noprint pass",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "cwd": "/workspaces/Codigo completo",
+      "program": "/workspaces/Codigo completo/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
           "ignoreFailures": true
         }
