@@ -14,6 +14,8 @@ To compile and run the program:
 
 **/
 
+#include <string.h>
+
 #include "job_control.h"  // remember to compile with module job_control.c
 
 #define MAX_LINE 256 /* 256 chars per line, per command, should be enough. */
@@ -33,16 +35,27 @@ int main(void) {
 
     while (1) /* Program terminates normally inside get_command() after ^D is typed */
     {
+        ignore_terminal_signals();
         printf("COMMAND->");
         fflush(stdout);
         get_command(inputBuffer, MAX_LINE, args, &background); /* get next command */
 
         if (args[0] == NULL) continue;  // if empty command
 
+        if (strcmp(args[0], "cd") == 0) {
+            chdir(args[1]);
+            continue;
+        }
+
         pid_fork = fork();
 
         if (pid_fork == 0) {
-            // Proceso hijo
+            setpgid(getpid(), getpid());
+
+            if (background == 0) {
+                tcsetpgrp(STDIN_FILENO, getpid());
+            }
+            restore_terminal_signals();
             execvp(args[0], args);
 
             // Si execvp falla
@@ -51,9 +64,10 @@ int main(void) {
 
         } else {
             // Proceso padre
+            tcsetpgrp(STDIN_FILENO, getpid());
             if (background == 0) {
                 // Foreground: esperar
-                pid_wait = waitpid(pid_fork, &status, 0);
+                pid_wait = waitpid(pid_fork, &status, WUNTRACED);
 
                 if (WIFEXITED(status)) {
                     printf("Foreground pid: %d, command: %s, Exited, info: %d\n", pid_wait, args[0],
@@ -66,6 +80,8 @@ int main(void) {
                            args[0], WSTOPSIG(status));
                 }
 
+                tcsetpgrp(STDIN_FILENO, getpid());  // Make sure shell regains terminal
+                ignore_terminal_signals();
             } else {
                 // Background: no esperar
                 printf("Background job running ... pid: %d, command: %s\n", pid_fork, args[0]);
