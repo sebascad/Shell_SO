@@ -160,7 +160,6 @@ job * get_item_bypos( job * list, int n)
 /*imprime una linea en el terminal con los datos del elemento: pid, nombre ... */
 void print_item(job * item)
 {
-
 	printf("pid: %d, command: %s, state: %s\n", item->pgid, item->command, state_strings[item->state]);
 }
 

@@ -19,6 +19,7 @@ To compile and run the program:
 #include "job_control.h"  // remember to compile with module job_control.c
 
 #define MAX_LINE 256 /* 256 chars per line, per command, should be enough. */
+
 job* jobList;
 
 void manejador(int sig) {
@@ -26,19 +27,23 @@ void manejador(int sig) {
     int status;
     while ((pid = waitpid(-1, &status, WUNTRACED | WNOHANG | WCONTINUED)) > 0) {
         if (WIFEXITED(status)) {
-            printf("Foreground pid: %d, command: %s, Exited, info: %d\n", pid,
-                   get_item_bypid(jobList, pid)->command, WEXITSTATUS(status));
-            delete_job(jobList, get_item_bypid(jobList, pid));
+            job* j = get_item_bypid(jobList, pid);
+            if (j == NULL) exit(-1);
+            printf("Background process %s (%d) Exited\n",j->command,pid);
+            delete_job(jobList, j);
         } else if (WIFSIGNALED(status)) {
             job* j = get_item_bypid(jobList, pid);
-            printf("Foreground pid: %d, command: %s, Signaled\n", pid, j->command,
-                   WIFSIGNALED(status));
+            if (j == NULL) exit(-1);
+            printf("Foreground pid: %d, command: %s, Signaled\n", pid, j->command);
 
             delete_job(jobList, j);
         } else if (WIFSTOPPED(status)) {
-            get_item_bypid(jobList, pid)->state = STOPPED;
+            job* j = get_item_bypid(jobList, pid);
+            if (j == NULL) exit(-1);
+            j->state = STOPPED;
         } else if (WIFCONTINUED(status)) {
             job* j = get_item_bypid(jobList, pid);
+            if (j == NULL) exit(-1);
             printf("Background process %s (%d) continued", j->command, j->pgid);
             j->state = BACKGROUND;
         }
@@ -130,6 +135,7 @@ int main(void) {
     int pid_fork, pid_wait;   /* pid for created and waited process */
     int status;               /* status returned by wait */
     char *file_in, *file_out; /* file names for redirection */
+    FILE *infile, *outfile;
     jobList = new_list("Lista jobList");
 
     while (1) /* Program terminates normally inside get_command() after ^D is typed */
@@ -168,7 +174,7 @@ int main(void) {
         pid_fork = fork();  // Creamos el proceso hijo
 
         if (pid_fork == 0) {
-            // Agrupamos los procesos hijos
+            // Agrupamos los procesos hijoss
             setpgid(getpid(), getpid());
 
             // Si no esta en segundo plano
@@ -178,14 +184,54 @@ int main(void) {
 
             // Los procesos hijos deben de poder recibir señales del terminal
             restore_terminal_signals();
+            
+            if (file_in != NULL)
+            {   
+                infile = fopen(file_in,"r");
+                if(NULL == infile){
+                    // si hay erorr, informamos y salimos
+		        printf("\tError: abriendo: %s\n", file_in);
+		        return (-1);
+                }
 
+                int fnum = fileno(infile);
+                int input = fileno(stdin);
+                int redirection_success = dup2(fnum,input);
+                
+                if (redirection_success == -1)
+                {
+                    printf("\tError: redireccionando entrada\n");
+		            return (-1);
+                }
+            }
             
-            
+            if (file_out != NULL)
+            {
+                outfile = fopen(file_out,"w");
+                if(NULL == outfile){
+                    // si hay erorr, informamos y salimos
+		        printf("\tError: abriendo: %s\n", file_out);
+		        return (-1);
+                }
+
+                int fnum = fileno(outfile);
+                int output = fileno(stdout);
+                int redirection_success = dup2(fnum,output);
+                
+                if (redirection_success == -1)
+                {
+                    printf("\tError: redireccionando la salida\n");
+		            return (-1);
+                }
+            }
             
             execvp(args[0], args);  // Ejecuta el comando
 
             // Si execvp falla
             printf("Error, command not found: %s\n", args[0]);
+            if (infile != NULL) fclose(infile);
+            if (outfile != NULL) fclose(outfile);
+           
             exit(-1);
 
         } else {
@@ -211,7 +257,7 @@ int main(void) {
 
                 tcsetpgrp(STDIN_FILENO, getpid());  // Shell recupera el termianl
                 ignore_terminal_signals();
-                
+
             } else {
                 // Background: no esperar
                 printf("Background job running ... pid: %d, command: %s\n", pid_fork, args[0]);
