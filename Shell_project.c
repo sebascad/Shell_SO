@@ -29,7 +29,7 @@ void manejador(int sig) {
         if (WIFEXITED(status)) {
             job* j = get_item_bypid(jobList, pid);
             if (j == NULL) exit(-1);
-            printf("Background process %s (%d) Exited\n",j->command,pid);
+            printf("Background process %s (%d) Exited\n", j->command, pid);
             delete_job(jobList, j);
         } else if (WIFSIGNALED(status)) {
             job* j = get_item_bypid(jobList, pid);
@@ -63,7 +63,7 @@ void fg(const char* n) {
     unblock_SIGCHLD();
 
     int status;
-    if (aux == NULL) exit(-1);
+    if (aux == NULL) return;
     int pid = aux->pgid;
     char* command = aux->command;
 
@@ -113,7 +113,7 @@ void bg(const char* n) {
     job* aux = get_item_bypos(jobList, num);
     if (aux == NULL) {
         unblock_SIGCHLD();
-        exit(-1);
+        return;
     }
 
     aux->state = BACKGROUND;
@@ -184,54 +184,51 @@ int main(void) {
 
             // Los procesos hijos deben de poder recibir señales del terminal
             restore_terminal_signals();
-            
-            if (file_in != NULL)
-            {   
-                infile = fopen(file_in,"r");
-                if(NULL == infile){
+
+            if (file_in != NULL) {
+                infile = fopen(file_in, "r");
+                if (NULL == infile) {
                     // si hay erorr, informamos y salimos
-		        printf("\tError: abriendo: %s\n", file_in);
-		        return (-1);
+                    printf("\tError: abriendo: %s\n", file_in);
+                    return (-1);
                 }
 
                 int fnum = fileno(infile);
                 int input = fileno(stdin);
-                int redirection_success = dup2(fnum,input);
-                
-                if (redirection_success == -1)
-                {
+                int redirection_success = dup2(fnum, input);
+
+                if (redirection_success == -1) {
                     printf("\tError: redireccionando entrada\n");
-		            return (-1);
+                    return (-1);
                 }
             }
-            
-            if (file_out != NULL)
-            {
-                outfile = fopen(file_out,"w");
-                if(NULL == outfile){
+
+            if (file_out != NULL) {
+                outfile = fopen(file_out, "w");
+                if (NULL == outfile) {
                     // si hay erorr, informamos y salimos
-		        printf("\tError: abriendo: %s\n", file_out);
-		        return (-1);
+                    printf("\tError: abriendo: %s\n", file_out);
+                    return (-1);
                 }
 
                 int fnum = fileno(outfile);
                 int output = fileno(stdout);
-                int redirection_success = dup2(fnum,output);
-                
-                if (redirection_success == -1)
-                {
+                int redirection_success = dup2(fnum, output);
+
+                if (redirection_success == -1) {
                     printf("\tError: redireccionando la salida\n");
-		            return (-1);
+                    return (-1);
                 }
             }
-            
+
             execvp(args[0], args);  // Ejecuta el comando
 
             // Si execvp falla
             printf("Error, command not found: %s\n", args[0]);
+
             if (infile != NULL) fclose(infile);
             if (outfile != NULL) fclose(outfile);
-           
+
             exit(-1);
 
         } else {
